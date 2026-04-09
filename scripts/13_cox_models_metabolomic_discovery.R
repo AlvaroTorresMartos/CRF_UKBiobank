@@ -11,9 +11,9 @@ pacman::p_load(readr, dplyr,  survival, broom, Hmisc,
 
 # Import data -----
 
-covariates = read_rds("/2025_07_25_covariates.RDS")
+covariates = read_rds("/mnt/project/data/processed/2025_07_25_covariates.RDS")
 
-data = read_rds("/discovery_metabolomics_signature.RDS")
+data = read_rds("/mnt/project/data/processed/discovery_metabolomics_signature.RDS")
 
 data = data %>% 
   dplyr::filter(eid %in% covariates$eid) %>% 
@@ -1652,7 +1652,7 @@ export_df <- bind_rows(
   make_export_table(cox_t2dm,       info_t2dm,       "T2D",                 "count_t2dm",       "perc_t2dm")
 )
 
-out_xlsx <- "/cox_results_metabolomics_discovery.xlsx"
+out_xlsx <- "./upload/cox_results_metabolomics_discovery.xlsx"
 
 wb <- createWorkbook()
 addWorksheet(wb, "Results")
@@ -1679,3 +1679,14 @@ addFilter(wb, "Results", rows = 1, cols = 1:ncol(export_df))
 
 saveWorkbook(wb, out_xlsx, overwrite = TRUE)
 out_xlsx
+
+# Upload the files to RAP UK Bibank----
+## Locate all the files generated in the upload folder 
+
+# setwd("./upload")
+
+# system("dx ls data/processed")
+
+# system("pwd")
+
+system("dx upload /home/rstudio-server/upload/*")

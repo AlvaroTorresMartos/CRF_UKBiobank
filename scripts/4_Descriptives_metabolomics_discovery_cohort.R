@@ -24,7 +24,7 @@ library(stringr)
 # 2) Load dataset
 # ---------------------------
 data <- readRDS(
-  "/metabolomics_clean_without_NCDs_17022026.rds"
+  "/mnt/project/data/processed/metabolomics_clean_without_NCDs_17022026.rds"
 )
 
 # ---------------------------
@@ -37,7 +37,7 @@ n_total <- nrow(data_vo2)
 # Save filtered subcohort (RDS)
 saveRDS(
   data_vo2,
-  "/Final databases/discovery_cohort_metabolomics.rds"
+  "./upload/Final databases/discovery_cohort_metabolomics.rds"
 )
 
 # ---------------------------
@@ -182,7 +182,7 @@ ft <- hline_bottom(ft, border = std_border, part = "all")
 # ---------------------------
 # 10) Export to Word
 # ---------------------------
-out_docx <- "/discovery_cohort_metabolomics.docx"
+out_docx <- "./upload/discovery_cohort_metabolomics.docx"
 
 doc <- read_docx()
 doc <- body_add_par(doc, "METABOLOMIC DISCOVERY COHORT", style = "heading 1")
@@ -197,3 +197,14 @@ message("✅ Saved Word table to: ", out_docx)
 # 11) Print preview in console (optional)
 # ---------------------------
 print(final_table, n = 200)
+
+# Upload the files to RAP UK Bibank----
+## Locate all the files generated in the upload folder 
+
+# setwd("./upload")
+
+# system("dx ls data/processed")
+
+# system("pwd")
+
+system("dx upload /home/rstudio-server/upload/*")

@@ -16,14 +16,14 @@ pacman::p_load(
 # Import data -----
 t1 <- Sys.time()
 
-metabolomics <- read_rds("/Biomarkers_all.rds")
+metabolomics <- read_rds("/mnt/project/data/processed/Biomarkers_all.rds")
 
-covariates <- read_rds("/2025_07_25_covariates.RDS")
+covariates <- read_rds("/mnt/project/data/processed/2025_07_25_covariates.RDS")
 
-ids <- read_rds("/discovery_cohort_metabolomics.rds")
+ids <- read_rds("/mnt/project/data/processed/discovery_cohort_metabolomics.rds")
 
 names <- read_tsv(
-  "/fieldsum.tsv",
+  "/mnt/project/Showcase metadata/fieldsum.tsv",
   show_col_types = FALSE
 )
 
@@ -105,7 +105,7 @@ sum(is.na(data))
 
 # Training Predictive modelling (elasticnet) -----
 
-data = readr::read_rds("/metabolomics_dataset_elasticnet_crf.RDS")
+data = readr::read_rds("/mnt/project/data/processed/metabolomics_dataset_elasticnet_crf.RDS")
 
 data$age_at_recruitment = scale(data$age_at_recruitment)
 data$vo2max = as.numeric(scale(data$vo2max))
@@ -164,7 +164,7 @@ results = elasticnet$results
 ############################################################
 
 # Final Predictive Model ------
-elasticnet = readr::read_rds("/elasticnet_metabolomics2.RDS")
+elasticnet = readr::read_rds("/mnt/project/data/processed/elasticnet_metabolomics2.RDS")
 
 set.seed(123456789)
 control = trainControl(method = "none")
@@ -183,7 +183,7 @@ t2 - t1
 ## Save the model as R object ----
 #saveRDS(elasticnet_final, "/final_elasticnet_metabolomics2.RDS")
 
-elasticnet_final <- read_rds("/final_elasticnet_metabolomics2.RDS")
+elasticnet_final <- read_rds("/mnt/project/data/processed/final_elasticnet_metabolomics2.RDS")
 
 pred = predict(elasticnet_final, data[, 2:258])
 
@@ -209,7 +209,7 @@ coef_elasticnet = coef_elasticnet %>%
 
 
 #saveRDS(coef_elasticnet, "/coeficientes_huella_metabolomics.RDS")
-coef_elasticnet <-readRDS("/coeficientes_huella_metabolomics.RDS")
+coef_elasticnet <-readRDS("/mnt/project/data/processed/coeficientes_huella_metabolomics.RDS")
 # Coefficient plot -----
 coef_elasticnet %>% 
   dplyr::rename(value = s0) %>% 
@@ -232,3 +232,14 @@ coef_elasticnet %>%
 
 
 colnames(coef_elasticnet)
+
+# Upload the files to RAP UK Bibank----
+## Locate all the files generated in the upload folder 
+
+# setwd("./upload")
+
+# system("dx ls data/processed")
+
+# system("pwd")
+
+system("dx upload /home/rstudio-server/upload/*")

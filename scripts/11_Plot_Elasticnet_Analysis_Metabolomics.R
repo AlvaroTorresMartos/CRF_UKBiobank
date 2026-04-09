@@ -7,8 +7,8 @@ library(dplyr)
 library(readr)
 library(ggplot2)
 
-path_data_metab  <- "/metabolomics_dataset_elasticnet_crf.RDS"
-path_model_metab <- "/final_elasticnet_metabolomics2.RDS"
+path_data_metab  <- "/mnt/project/data/processed/metabolomics_dataset_elasticnet_crf.RDS"
+path_model_metab <- "/mnt/project/data/processed/final_elasticnet_metabolomics2.RDS"
 
 data  <- read_rds(path_data_metab)
 model <- read_rds(path_model_metab)

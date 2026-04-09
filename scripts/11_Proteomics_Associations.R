@@ -1,24 +1,19 @@
-#########################################################
-# UNIVARIATE LINEAR REGRESSIONS FOR MULTIPLE METABOLITES
-# Includes standardized and unstandardized betas
-# Adjusted for confounders
-# 17/02/2026
-#########################################################
 
 # ==========================
 # 1. LOAD REQUIRED PACKAGES
 # ==========================
-install.packages("broom")
-install.packages("dplyr")
-install.packages("lm.beta")
-install.packages("writexl")
-install.packages("readxl")
+packages_needed <- c("broom", "dplyr", "lm.beta", "writexl")
+
+for (pkg in packages_needed) {
+  if (!requireNamespace(pkg, quietly = TRUE)) {
+    install.packages(pkg)
+  }
+}
 
 library(broom)
 library(dplyr)
 library(lm.beta)
 library(writexl)
-library(readxl)
 
 # ==========================
 # 2. MAIN FUNCTION
@@ -27,46 +22,34 @@ recursive_lm <- function(outcome, predictor, data, formula, min_n = 50) {
   
   results <- lapply(outcome, function(y) {
     
-    # Clean covariates from formula
     covariates <- trimws(unlist(strsplit(formula, "\\+")))
     covariates <- covariates[covariates != ""]
     
-    # Define variables to keep in the model
     model_vars <- c(y, predictor, covariates)
     data_model <- data[complete.cases(data[, model_vars]), ]
     
-    # Print N to debug
-    cat("🔬 Metabolito:", y, "- N =", nrow(data_model), "\n")
+    cat("Protein:", y, "- N =", nrow(data_model), "\n")
     
-    # Skip if too few observations
     if (nrow(data_model) < min_n) return(NULL)
     
-    # Raw model
     object2 <- lm(
       as.formula(paste0(y, " ~ `", predictor, "`", formula)), data = data_model
     )
     
-    # Extract raw coefficients + CI + N
     tidy_object2 <- broom::tidy(object2, conf.int = TRUE) %>%
       filter(term == predictor | term == paste0("`", predictor, "`"))
     
-    # Check if predictor term was found
     if (nrow(tidy_object2) == 0) {
-      cat("⚠️ No se encontró el término del predictor en:", y, "\n")
+      cat("Predictor term not found in:", y, "\n")
       return(NULL)
     }
     
-    # Standardized model
-    object1 <- lm.beta::lm.beta(
-      lm(as.formula(paste0(y, " ~ `", predictor, "`", formula)), data = data_model)
-    )
+    object1 <- lm.beta::lm.beta(object2)
     
-    # Extract standardized betas
     tidy_object1 <- broom::tidy(object1) %>%
       select(term, std_estimate) %>%
       rename(predictor = term, std_coefficient = std_estimate)
     
-    # Complete tidy_object2 with additional columns
     tidy_object2 <- tidy_object2 %>%
       rename(predictor = term) %>%
       mutate(
@@ -83,7 +66,6 @@ recursive_lm <- function(outcome, predictor, data, formula, min_n = 50) {
         CI_high = conf.high
       )
     
-    # Combine results
     tidy_object <- merge(tidy_object1, tidy_object2, by = "predictor") %>%
       relocate(outcome, .before = predictor) %>%
       relocate(beta_coefficient, .before = std_coefficient)
@@ -91,51 +73,56 @@ recursive_lm <- function(outcome, predictor, data, formula, min_n = 50) {
     return(tidy_object)
   })
   
-  # Bind all models
   final_result <- bind_rows(results)
   return(final_result)
 }
 
 # ==========================
-# 3. LOAD DATA & DEFINE VARIABLES
+# 3. LOAD DATA & DEFINE VARIABLES (PROTEINS)
 # ==========================
-data_merged_filtered_metabolomics <- readRDS(
-  file.path("/mnt/project/data/processed/discovery_cohort_metabolomics.rds")
+data_merged_filtered_proteomics <- readRDS(
+  "/mnt/project/data/processed/data_proteomics_10percent_filtered_25_07_2025.rds"
 )
 
 predictor <- "30038_0_0"  # VO2max
 formula <- "+ age_group + sex + ethnicity"
 
-# Identify only metabolite columns starting with metabo_ and ending in _0_0
-metabolites <- grep("^metabo_.*_0_0$", names(data_merged_filtered_metabolomics), value = TRUE)
+total_cols <- ncol(data_merged_filtered_proteomics)
+end_col <- min(2973, total_cols)
+if (total_cols < 51) stop("No hay suficientes columnas para seleccionar proteínas.")
+proteins <- names(data_merged_filtered_proteomics)[51:end_col]
 
 # ==========================
-# 3A. FORMAT VARIABLES
+# 4. FORMAT VARIABLES
 # ==========================
 categorical_vars <- c("age_group", "sex", "ethnicity")
 for (var in categorical_vars) {
-  data_merged_filtered_metabolomics[[var]] <- as.factor(data_merged_filtered_metabolomics[[var]])
+  if (var %in% names(data_merged_filtered_proteomics)) {
+    data_merged_filtered_proteomics[[var]] <- as.factor(data_merged_filtered_proteomics[[var]])
+  } else {
+    warning(paste("Variable categórica", var, "no encontrada en el dataset."))
+  }
 }
 
-data_merged_filtered_metabolomics[, metabolites] <- lapply(
-  data_merged_filtered_metabolomics[, metabolites],
+data_merged_filtered_proteomics[, proteins] <- lapply(
+  data_merged_filtered_proteomics[, proteins, drop = FALSE],
   function(x) as.numeric(as.character(x))
 )
 
 # ==========================
-# 4. RUN ANALYSIS
+# 5. RUN ANALYSIS
 # ==========================
-results <- recursive_lm(
-  outcome = metabolites,
+results_proteins <- recursive_lm(
+  outcome = proteins,
   predictor = predictor,
-  data = data_merged_filtered_metabolomics,
+  data = data_merged_filtered_proteomics,
   formula = formula,
-  min_n = 50
+  min_n = 30
 )
 
-# FDR adjust
-if (!is.null(results) && nrow(results) > 0) {
-  results <- results %>%
+# FDR
+if (nrow(results_proteins) > 0) {
+  results_proteins <- results_proteins %>%
     rename(p_value_raw = p.value) %>%
     mutate(
       p_value_fdr = p.adjust(p_value_raw, method = "fdr"),
@@ -144,45 +131,31 @@ if (!is.null(results) && nrow(results) > 0) {
 }
 
 # ==========================
-# 4B. ADD METABOLITE NAMES (title) BEFORE EXPORT
+# 6. SAVE MAIN RESULTS (.xlsx)
 # ==========================
-metabo_dict <- readxl::read_xlsx(
-  "/metabo_names.xlsx"
-) %>%
-  dplyr::select(field_id, title, Group, Subgroup, variable_name) %>%
-  dplyr::mutate(variable_name = trimws(variable_name))
-
-if (!is.null(results) && nrow(results) > 0) {
-  results <- results %>%
-    dplyr::mutate(outcome = trimws(outcome)) %>%
-    dplyr::left_join(metabo_dict, by = c("outcome" = "variable_name")) %>%
-    dplyr::rename(outcome_title = title) %>%
-    dplyr::relocate(outcome_title, Group, Subgroup, .after = outcome)
-}
-
-# ==========================
-# 5. SAVE MAIN RESULTS (.xlsx)
-# ==========================
-if (is.null(results) || nrow(results) == 0) {
-  cat("⚠️ No se generó ningún modelo. Revisa los filtros y la función.\n")
+if (nrow(results_proteins) == 0) {
+  cat("No models were generated. Check filters and function.\n")
 } else {
-  writexl::write_xlsx(results, "./upload/metabolomics_associations.xlsx")
+  writexl::write_xlsx(
+    results_proteins,
+    "./upload/proteomics_associations.xlsx"
+  )
 }
 
 # ==========================
-# 6. SAMPLE SIZE SUMMARY (.xlsx)
+# 7. SAMPLE SIZE SUMMARY (.xlsx)
 # ==========================
 covariates <- trimws(unlist(strsplit(formula, "\\+")))
 covariates <- covariates[covariates != ""]
 vars_for_max_N <- c(predictor, covariates)
 
-max_N <- data_merged_filtered_metabolomics %>%
+max_N <- data_merged_filtered_proteomics %>%
   select(all_of(vars_for_max_N)) %>%
   filter(complete.cases(.)) %>%
   nrow()
 
-if (!is.null(results) && nrow(results) > 0) {
-  n_summary <- results %>%
+if (nrow(results_proteins) > 0) {
+  n_summary_proteins <- results_proteins %>%
     select(outcome, N) %>%
     distinct() %>%
     mutate(
@@ -192,8 +165,11 @@ if (!is.null(results) && nrow(results) > 0) {
     ) %>%
     arrange(desc(N))
   
-  print(n_summary)
-  writexl::write_xlsx(n_summary, "./upload/metabolomics_associations_summary.xlsx")
+  print(n_summary_proteins)
+  writexl::write_xlsx(
+    n_summary_proteins,
+    "./upload/univariate_sample_size_per_protein.xlsx"
+  )
 }
 
 # Upload the files to RAP UK Bibank----

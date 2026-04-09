@@ -12,15 +12,16 @@ pacman::p_load(readr, dplyr, janitor, stringr, naniar, broom,
 
 # Import data -----
 t1 = Sys.time()
-metabolomics = read_rds("/Biomarkers_all.rds")
+metabolomics = read_rds("/mnt/project/data/processed/Biomarkers_all.rds")
 
-covariates = read_rds("/2025_07_25_covariates.RDS")
+covariates = read_rds("/mnt/project/data/processed/2025_07_25_covariates.RDS")
 
-ids_disc = read_rds("/discovery_cohort_metabolomics.rds")
+ids_disc = read_rds("/mnt/project/data/processed//discovery_cohort_metabolomics.rds")
 
-ids_vali = read_rds("/validation_cohort_metabolomics.rds")
+ids_vali = read_rds("/mnt/project/data/processed//validation_cohort_metabolomics.rds")
 
-names = readr::read_tsv("/fieldsum.tsv", show_col_types = FALSE)
+names = readr::read_tsv("/mnt/project/Showcase metadata/fieldsum.tsv", show_col_types = FALSE)
+
 
 t2 = Sys.time()
 t2-t1
@@ -184,7 +185,7 @@ sum(is.na(data_vali))
 # [1] 0
 
 # Final model elastinet -----
-elasticnet_final = readr::read_rds("/final_elasticnet_metabolomics2.RDS")
+elasticnet_final = readr::read_rds("/mnt/project/data/processed/final_elasticnet_metabolomics2.RDS")
 
 metabolomic_signature_disc = predict(elasticnet_final, data_disc[, c(2:258)])
 metabolomic_signature_vali = predict(elasticnet_final, data_vali[, c(2:258)])
@@ -220,6 +221,16 @@ data_vali$z_scaled %>% hist()
 # vali_popu = vali_popu %>% 
 #   dplyr::select(eid, z_scaled)
 
-saveRDS(data_disc, "/discovery_metabolomics_signature.RDS")
-saveRDS(data_vali, "/validation_metabolomics_signature.RDS")
+saveRDS(data_disc, "./upload/discovery_metabolomics_signature.RDS")
+saveRDS(data_vali, "./upload/validation_metabolomics_signature.RDS")
 
+# Upload the files to RAP UK Bibank----
+## Locate all the files generated in the upload folder 
+
+# setwd("./upload")
+
+# system("dx ls data/processed")
+
+# system("pwd")
+
+system("dx upload /home/rstudio-server/upload/*")

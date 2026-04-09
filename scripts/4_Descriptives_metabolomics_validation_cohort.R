@@ -26,7 +26,7 @@ library(stringr)
 # 2) Load dataset (base completa)
 # ---------------------------
 data <- readRDS(
-  "/metabolomics_clean_without_NCDs_17022026.rds"
+  "/mnt/project/data/processed/metabolomics_clean_without_NCDs_17022026.rds"
 )
 
 # ---------------------------
@@ -34,7 +34,7 @@ data <- readRDS(
 #    BUT excluding individuals from discovery cohort
 # ---------------------------
 discovery_cohort <- readRDS(
-  "/discovery_cohort_metabolomics.rds"
+  "/mnt/project/data/processed/discovery_cohort_metabolomics.rds"
 )
 
 eid_discovery <- discovery_cohort$eid
@@ -47,7 +47,7 @@ cat("Validation cohort size (raw):", nrow(data_validation), "\n")
 # Save validation cohort
 saveRDS(
   data_validation,
-  "/validation_cohort_metabolomics.rds"
+  "./upload/validation_cohort_metabolomics.rds"
 )
 
 # ---------------------------
@@ -195,7 +195,7 @@ ft <- hline_bottom(ft, border = std_border, part = "all")
 # ---------------------------
 # 11) Export to Word
 # ---------------------------
-out_docx <- "/validation_cohort_metabolomics.docx"
+out_docx <- "./upload/validation_cohort_metabolomics.docx"
 
 doc <- read_docx()
 doc <- body_add_par(doc, "METABOLOMIC VALIDATION COHORT", style = "heading 1")
@@ -211,3 +211,13 @@ message("✅ Saved Word table to: ", out_docx)
 # ---------------------------
 print(final_table, n = 200)
 
+# Upload the files to RAP UK Bibank----
+## Locate all the files generated in the upload folder 
+
+# setwd("./upload")
+
+# system("dx ls data/processed")
+
+# system("pwd")
+
+system("dx upload /home/rstudio-server/upload/*")

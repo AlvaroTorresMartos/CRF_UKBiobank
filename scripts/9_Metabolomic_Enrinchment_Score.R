@@ -13,7 +13,7 @@ library(readxl)
 # 1) Import linear regression results
 # ============================
 assoc <- read_excel(
-  "/metabolomics_associations.xlsx",
+  "/mnt/project/data/processed/metabolomics_associations.xlsx",
   sheet = "Sheet1"
 )
 
@@ -460,12 +460,12 @@ msea_plot
 # ============================
 
 # Output folder (your path)
-out_dir <- "/results_new"
+out_dir <- "./"
 if (!dir.exists(out_dir)) dir.create(out_dir, recursive = TRUE)
 
 # ---- Save as PDF
 ggsave(
-  filename = file.path(out_dir, "/Metabolomics_Enrichment_Betas.pdf"),
+  filename = file.path(out_dir, "./upload/Metabolomics_Enrichment_Betas.pdf"),
   plot = msea_plot,
   width = 10,
   height = 8,
@@ -477,5 +477,16 @@ library(writexl)
 
 write_xlsx(
   fgsea_results,
-  path = file.path(out_dir, "/Metabolomics_Enrichment_Betas.xlsx")
+  path = file.path(out_dir, "./upload/Metabolomics_Enrichment_Betas.xlsx")
 )
+
+# Upload the files to RAP UK Bibank----
+## Locate all the files generated in the upload folder 
+
+# setwd("./upload")
+
+# system("dx ls data/processed")
+
+# system("pwd")
+
+system("dx upload /home/rstudio-server/upload/*")

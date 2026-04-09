@@ -16,7 +16,7 @@ pacman::p_load(
 # 1) Read data (results already include outcome_title) ----
 # =========================================================
 metabo <- readxl::read_xlsx(
-  path = "/metabolomics_associations.xlsx"
+  path = "/mnt/project/data/processed/metabolomics_associations.xlsx"
 ) %>%
   mutate(
     beta_coefficient = as.numeric(gsub(",", ".", beta_coefficient)),
@@ -638,10 +638,20 @@ print(p_gg)
 if (!requireNamespace("Cairo", quietly = TRUE)) install.packages("Cairo")
 
 ggsave(
-  filename = "/figure_metabolomics.pdf",
+  filename = "./upload/figure_metabolomics.pdf",
   plot = p_gg,
   width = 10,
   height = 8,
   device = "pdf"
 )
 
+# Upload the files to RAP UK Bibank----
+## Locate all the files generated in the upload folder 
+
+# setwd("./upload")
+
+# system("dx ls data/processed")
+
+# system("pwd")
+
+system("dx upload /home/rstudio-server/upload/*")

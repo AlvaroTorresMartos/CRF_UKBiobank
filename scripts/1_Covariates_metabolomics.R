@@ -54,7 +54,7 @@ data_merged <- data_merged %>%
 
 # Save
 saveRDS(data_merged, 
-        file = "/data_merged_17022026.rds")
+        file = "./upload/data_merged_17022026.rds")
 
 t2 = Sys.time()
 t1-t2
@@ -68,7 +68,7 @@ if (!require("pacman")) install.packages("pacman")
 pacman::p_load(dplyr, readr, stringr, tidyr, descr)
 
 # Load merged data
-data_merged_copy <- readRDS("/data_merged_17022026.rds")
+data_merged_copy <- readRDS("/mnt/project/data/processed/data_merged_17022026.rds")
 
 ## 21022: Age at recruitment----
 # https://biobank.ndph.ox.ac.uk/showcase/field.cgi?id=21022
@@ -812,10 +812,10 @@ final_vars <- c(covariates_clean, metabo_vars, ncd_vars, vo2max_vars)
 data_merged_copy <- data_merged_copy %>% select(all_of(final_vars))
 
 # Save the final dataset to file, next time prevalent discard ncd diseases for elastic-net construction
-saveRDS(data_merged_copy, "/data_merged_copy_17_02_2026_needed_to_merge_by_ids.rds")
+saveRDS(data_merged_copy, "./upload/data_merged_copy_17_02_2026_needed_to_merge_by_ids.rds")
 
 
-data_merged_copy <- readRDS("/data_merged_copy_17_02_2026_needed_to_merge_by_ids.rds")
+data_merged_copy <- readRDS("./upload/data_merged_copy_17_02_2026_needed_to_merge_by_ids.rds")
 
 
 
@@ -827,5 +827,15 @@ data_merged_copy <- data_merged_copy[apply(data_merged_copy[, metabo_cols, drop 
 
 
 
-saveRDS(data_merged_copy, "/data_merged_copy_17_02_2026_at_least_1_missing_metabolite_needed_to_merge_by_ids.rds")
+saveRDS(data_merged_copy, "./upload/data_merged_copy_17_02_2026_at_least_1_missing_metabolite_needed_to_merge_by_ids.rds")
 
+# Upload the files to RAP UK Bibank----
+## Locate all the files generated in the upload folder 
+
+# setwd("./upload")
+
+# system("dx ls data/processed")
+
+# system("pwd")
+
+system("dx upload /home/rstudio-server/upload/*")
